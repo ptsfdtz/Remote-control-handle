@@ -50,6 +50,8 @@
 
 ### 3.3 模型爆炸视图
 
+https://github.com/ptsfdtz/Remote-control-handle/assets/148436840/ea57b409-a363-41d5-a612-20af8ce92d28
+
 展示拆分细节
 
 ## 4. 电路部分
