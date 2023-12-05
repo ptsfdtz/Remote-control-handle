@@ -119,6 +119,35 @@ void updateEncoder() {
 
 ```
 
+但是由于我们使用的单片机为 arduino nano，仅有两个中断引脚，所以不得不更换为电位器
+
+电位器就是可调电阻，使用时可形成不同的分压
+
+<img src="images/../image/10.jpg" alt="电位器" width="200"/>
+
+在代码中可以调整电位器值转换为角度范围，使用`map`函数实现，示例代码如下，通过数字引脚输入信号读取电位器的转动角度。
+
+```cpp
+const int potPin_L = A0;
+const int potPin_R = A1;
+void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+  int potValue_L = analogRead(potPin_L);
+  int potValue_R = analogRead(potPin_R);
+
+  int angle_L = map(potValue_L, 0, 1023, 0, 360);
+  int angle_R = map(potValue_R, 0, 1023, 0, 360);
+
+  Serial.println(angle_L);
+  Serial.println(angle_R);
+
+  delay(100);
+}
+```
+
 #### 4.1.2 LCD1602 with I2C
 
 <img src="images/../image/7.png" alt="KCD1-A" width="200"/>
@@ -134,18 +163,23 @@ void updateEncoder() {
 下面是示例代码，需要连接单片的的`SDA`和`SCL`引脚，使用 3.3v/5v 供电。
 
 ```cpp
-#include <LiquidCrystal.h>
-LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+#define LCD_ADDRESS 0x27
+#define LCD_COLUMNS 16
+#define LCD_ROWS 2
+
+LiquidCrystal_I2C lcd(LCD_ADDRESS, LCD_COLUMNS, LCD_ROWS);
 
 void setup() {
-  lcd.begin(16, 2);
-  lcd.print("Hello, World!");
+  lcd.begin();
+  lcd.print("Hello World");
 }
 
 void loop() {
-    // put your main code here, to run repeatedly:
+  // 在loop中可以添加其他代码
 }
-
 ```
 
 #### 4.1.3 nRF24L01
@@ -222,3 +256,71 @@ void loop() {
 另一个常见问题是 Arduino 板的 3.3V 引脚不能始终为 NRF24L01 模块提供足够的电源。因此，使用外部电源为模块供电也是一个好主意。
 
 <img src="images/../image/9.jpg" alt="NRF24L01" width="500"/>
+
+#### 4.1.4 线性按键摇杆
+
+`ps2`手柄上的可按压摇杆使用非常的广泛而且十分的简便，无需安装其他库。
+
+并且仅用一只手指即可以完成三种信号的输出，可操作性比其他的摇杆优势高。
+
+<img src="images/../image/11.jpg" alt="NRF24L01" width="200"/>
+
+`vRX`和`vRy`需要连接在模拟输入口，示例代码如下。
+
+```cpp
+const int xPin1 = A7;
+const int yPin1 = A6;
+const int buttonPin1 = 0;
+
+const int xPin2 = A3;
+const int yPin2 = A2;
+const int buttonPin2 = 1;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(xPin1, INPUT);
+  pinMode(yPin1, INPUT);
+  pinMode(buttonPin1, INPUT_PULLUP);
+
+  pinMode(xPin2, INPUT);
+  pinMode(yPin2, INPUT);
+  pinMode(buttonPin2, INPUT_PULLUP);
+}
+
+void loop() {
+  int xValue1 = analogRead(xPin1);
+  int yValue1 = analogRead(yPin1);
+  int buttonState1 = digitalRead(buttonPin1);
+
+  int xValue2 = analogRead(xPin2);
+  int yValue2 = analogRead(yPin2);
+  int buttonState2 = digitalRead(buttonPin2);
+
+  Serial.print(xPin1);
+  Serial.print(" ");
+  Serial.print(yPin1);
+  Serial.print(" ");
+  Serial.print(buttonPin1);
+  Serial.print(" ");
+  Serial.print(xPin2);
+  Serial.print(" ");
+  Serial.print(yPin2);
+  Serial.print(" ");
+  Serial.println(buttonPin2);
+  delay(100);
+}
+```
+
+## 5. 功能简介
+
+### **实物视图**
+
+- 正面视图
+
+<img src="images/../image/12.jpg" alt="NRF24L01" width="500"/>
+
+- 背面视图（忽略我粗糙的理线）
+
+<img src="images/../image/13.jpg" alt="NRF24L01" width="500"/>
+
+### **视频展示**
