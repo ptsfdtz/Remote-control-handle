@@ -324,3 +324,6 @@ void loop() {
 <img src="images/../image/13.jpg" alt="NRF24L01" width="500"/>
 
 ### **视频展示**
+
+https://github.com/ptsfdtz/Remote-control-handle/assets/148436840/af519cdb-0244-4dc7-bf22-2b7f280e0448
+
