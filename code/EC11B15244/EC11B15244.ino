@@ -1,40 +1,55 @@
-const int encoderPinA = 2;
-const int encoderPinB = 3;
+// Rotary Encoder Inputs
+#define CLK 2
+#define DT 4
 
-volatile long encoderPosition = 0;
+int counter = 0;
+int currentStateCLK;
+int lastStateCLK;
+String currentDir ="";
+unsigned long lastButtonPress = 0;
 
 void setup() {
-  pinMode(encoderPinA, INPUT);
-  pinMode(encoderPinB, INPUT);
+        
+        // Set encoder pins as inputs
+        pinMode(CLK,INPUT);
+        pinMode(DT,INPUT);
 
-  digitalWrite(encoderPinA, HIGH);
-  digitalWrite(encoderPinB, HIGH);
-  attachInterrupt(digitalPinToInterrupt(encoderPinA), updateEncoder, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(encoderPinB), updateEncoder, CHANGE);
-  Serial.begin(9600);
+        // Setup Serial Monitor
+        Serial.begin(9600);
+
+        // Read the initial state of CLK
+        lastStateCLK = digitalRead(CLK);
 }
 
 void loop() {
-  long newPosition = encoderPosition;
-  if (newPosition != encoderPosition) {
-    Serial.println(newPosition);
-    encoderPosition = newPosition;
-  }
-}
+        
+        // Read the current state of CLK
+        currentStateCLK = digitalRead(CLK);
 
-void updateEncoder() {
-  static byte encoder_A_prev = 0;
+        // If last and current state of CLK are different, then pulse occurred
+        // React to only 1 state change to avoid double count
+        if (currentStateCLK != lastStateCLK  && currentStateCLK == 1){
 
-  byte encoder_A = digitalRead(encoderPinA);
-  byte encoder_B = digitalRead(encoderPinB);
+                // If the DT state is different than the CLK state then
+                // the encoder is rotating CCW so decrement
+                if (digitalRead(DT) != currentStateCLK) {
+                        counter --;
+                        currentDir ="CCW";
+                } else {
+                        // Encoder is rotating CW so increment
+                        counter ++;
+                        currentDir ="CW";
+                }
 
-  if ((encoder_A == HIGH) && (encoder_A_prev == LOW)) {
-    if (encoder_B == LOW) {
-      encoderPosition++;
-    } else {
-      encoderPosition--;
-    }
-  }
+                Serial.print("Direction: ");
+                Serial.print(currentDir);
+                Serial.print(" | Counter: ");
+                Serial.println(counter);
+        }
 
-  encoder_A_prev = encoder_A;
+        // Remember last CLK state
+        lastStateCLK = currentStateCLK;
+
+        // Put in a slight delay to help debounce the reading
+        delay(1);
 }
