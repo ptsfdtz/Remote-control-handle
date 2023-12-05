@@ -123,7 +123,7 @@ void updateEncoder() {
 
 <img src="images/../image/7.png" alt="KCD1-A" width="200"/>
 
-`i2c通讯`原理可以详见电子组培训文档[电子组培训文档-i2c 通讯原理](https://www.waveshare.com/wiki/LCD1602_I2C_Module)
+`i2c通讯`原理可以详见电子组培训文档[电子组培训文档-i2c 通讯原理](https://book.jinhun.moe/MCU-Communication/Serial/I2C/Intro.html)
 
 在本项目中屏幕的主要功能是模式选择以及显示此刻遥控器的指令，以便于后期调试和用户的交互式体验。
 
