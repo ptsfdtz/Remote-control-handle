@@ -64,7 +64,7 @@ void loop() {
 void show_bottom(int state1, int state2, int state3, int state4, int state5) {
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Mod Selection:");
+  lcd.print("Bottom Selection:");
   lcd.setCursor(0, 1);
   lcd.print(String(state1) + " " + String(state2) + " " + String(state3) +
             " " + String(state4) + " " + String(state5));
