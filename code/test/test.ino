@@ -1,9 +1,15 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
+#include <SPI.h>
+#include <nRF24L01.h>
+#include <RF24.h>
 
 #define LCD_ADDRESS 0x27
 #define LCD_COLUMNS 16
 #define LCD_ROWS 2
+
+RF24 radio(7, 8);
+const byte address[6] = "00001";
 
 const int buttonPins[] = {4, 5, 6, 9, 10};
 const int switchPins[] = {2, 3};
@@ -14,7 +20,11 @@ LiquidCrystal_I2C lcd(LCD_ADDRESS, LCD_COLUMNS, LCD_ROWS);
 
 void setup() {
   Serial.begin(9600);
-  
+  radio.begin();
+  radio.openWritingPipe(address);
+  radio.setPALevel(RF24_PA_MIN);
+  radio.stopListening();
+
   for (int pin : buttonPins)
     pinMode(pin, INPUT_PULLUP);
 
@@ -31,74 +41,81 @@ void setup() {
 }
 
 void loop() {
-  int state1 = digitalRead(buttonPins[0]);
-  int state2 = digitalRead(buttonPins[1]);
-  int state3 = digitalRead(buttonPins[2]);
-  int state4 = digitalRead(buttonPins[3]);
-  int state5 = digitalRead(buttonPins[4]);
+  int state[5];
+  int xValue_L, yValue_L, buttonValue_L, xValue_R, yValue_R, buttonValue_R, potValue_L, potValue_R, angle_L, angle_R;
 
-  int xValue_L = analogRead(analogPinsL[0]);
-  int yValue_L = analogRead(analogPinsL[1]);
-  int buttonValue_L = analogRead(analogPinsL[2]);
+  for (int i = 0; i < 5; ++i)
+    state[i] = digitalRead(buttonPins[i]);
 
-  int xValue_R = analogRead(analogPinsR[0]);
-  int yValue_R = analogRead(analogPinsR[1]);
-  int buttonValue_R = analogRead(analogPinsR[2]);
+  xValue_L = analogRead(analogPinsL[0]);
+  yValue_L = analogRead(analogPinsL[1]);
+  buttonValue_L = analogRead(analogPinsL[2]);
 
-  int potValue_L = analogRead(analogPinsL[3]);
-  int potValue_R = analogRead(analogPinsR[3]);
-  int angle_L = map(potValue_L, 0, 1023, 0, 360);
-  int angle_R = map(potValue_R, 0, 1023, 0, 360);
+  xValue_R = analogRead(analogPinsR[0]);
+  yValue_R = analogRead(analogPinsR[1]);
+  buttonValue_R = analogRead(analogPinsR[2]);
 
-  if (digitalRead(switchPins[0]) == HIGH && digitalRead(switchPins[1]) == LOW) {
-    show_bottom(state1, state2, state3, state4, state5);
-  } else if (digitalRead(switchPins[1]) == HIGH && digitalRead(switchPins[0]) == LOW) {
+  potValue_L = analogRead(analogPinsL[3]);
+  potValue_R = analogRead(analogPinsR[3]);
+  angle_L = map(potValue_L, 0, 1023, 0, 360);
+  angle_R = map(potValue_R, 0, 1023, 0, 360);
+
+  const char text[] = "Hello World";
+  radio.write(&text, sizeof(text));
+
+  if (digitalRead(switchPins[0]) == HIGH && digitalRead(switchPins[1]) == LOW)
+    show_bottom(state[0], state[1], state[2], state[3], state[4]);
+  else if (digitalRead(switchPins[1]) == HIGH && digitalRead(switchPins[0]) == LOW)
     show_XYB(xValue_L, yValue_L, buttonValue_L, xValue_R, yValue_R, buttonValue_R);
-  } else if (digitalRead(switchPins[1]) == HIGH && digitalRead(switchPins[0]) == HIGH) {
+  else if (digitalRead(switchPins[1]) == HIGH && digitalRead(switchPins[0]) == HIGH)
     show_angle(angle_L, angle_R);
-  } else {
-    show_direction(xValue_R);
-  }
+  else
+    show_direction(xValue_R, yValue_R, yValue_L);
 }
 
 void show_bottom(int state1, int state2, int state3, int state4, int state5) {
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("Bottom Selection:");
-  lcd.setCursor(0, 1);
-  lcd.print(String(state1) + " " + String(state2) + " " + String(state3) +
-            " " + String(state4) + " " + String(state5));
-  delay(1000);
+  show_lcd("Bottom Selection:", (String(state1) + " " + String(state2) + " " + String(state3) + " " + String(state4) + " " + String(state5)).c_str());
 }
 
 void show_XYB(int xValue_L, int yValue_L, int buttonValue_L, int xValue_R, int yValue_R, int buttonValue_R) {
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("X Y Bottom value:");
-  lcd.setCursor(0, 1);
-  lcd.print(String(xValue_L) + " " + String(yValue_L) + " " + String(buttonValue_L) +
-            " " + String(xValue_R) + " " + String(yValue_R) + " " + String(buttonValue_R));
-  delay(1000);
+  show_lcd("X Y Bottom value:", (String(xValue_L) + " " + String(yValue_L) + " " + String(xValue_R) + " " + String(yValue_R) + " " +String(buttonValue_L) + " " + String(buttonValue_R)).c_str());
 }
 
 void show_angle(int angle_L, int angle_R) {
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("Potent angle:");
-  lcd.setCursor(0, 1);
-  lcd.print(String(angle_L) + "       " + String(angle_R));
-  delay(1000);
+  show_lcd("Potent angle:", (String(angle_L) + "       " + String(angle_R)).c_str());
 }
 
-void show_direction(int xValue_R) {
+void show_direction(int xValue_R, int yValue_R, int yValue_L) {
+  int speed;
   if (xValue_R > 510) {
-    int speed = xValue_R - 508;
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Direction speed");
-    lcd.setCursor(0, 1);
-    lcd.print("Forward " + String(speed));
+    speed = xValue_R - 508;
+    show_lcd("Direction speed", ("Forward   " + String(speed)).c_str());
+  } else if (xValue_R < 506) {
+    speed = 508 - xValue_R;
+    show_lcd("Direction speed", ("Backward  " + String(speed)).c_str());
+  } else if (yValue_R > 510) { 
+    speed = yValue_R - 508;
+    show_lcd("Direction speed", ("Right     " + String(speed)).c_str());
+  } else if (yValue_R < 506) {
+    speed = 508 - yValue_R;
+    show_lcd("Direction speed", ("Left      " + String(speed)).c_str());
+  } else if (yValue_L > 518) {
+    speed = yValue_L - 508;
+    show_lcd("Direction speed", ("Shift_R   " + String(speed)).c_str());
+  } else if (yValue_L < 510) {
+    speed = 508 - yValue_L;
+    show_lcd("Direction speed", ("Shift_L   " + String(speed)).c_str());
   }
+  delay(50);
+}
+
+void show_lcd(const char* line1, const char* line2) {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print(line1);
+  lcd.setCursor(0, 1);
+  lcd.print(line2);
+  delay(250);
 }
 
 void begin_cartoon() {
