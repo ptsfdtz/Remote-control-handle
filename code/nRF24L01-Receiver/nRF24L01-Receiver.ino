@@ -15,9 +15,10 @@ void setup() {
 }
 
 void loop() {
+  Serial.println(2);
   if (radio.available()) {
     char text[32] = "";
     radio.read(&text, sizeof(text));
-    Serial.println(text);
+    Serial.println(1);
   }
 }
