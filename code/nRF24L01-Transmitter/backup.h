@@ -60,9 +60,6 @@ void loop() {
   angle_L = map(potValue_L, 0, 1023, 0, 360);
   angle_R = map(potValue_R, 0, 1023, 0, 360);
 
-  const char text[] = "Hello World";
-  radio.write(&text, sizeof(text));
-
   if (digitalRead(switchPins[0]) == HIGH && digitalRead(switchPins[1]) == LOW)
     show_bottom(state[0], state[1], state[2], state[3], state[4]);
   else if (digitalRead(switchPins[1]) == HIGH && digitalRead(switchPins[0]) == LOW)
@@ -87,10 +84,10 @@ void show_angle(int angle_L, int angle_R) {
 
 void show_direction(int xValue_R, int yValue_R, int yValue_L, int xValue_L) {
   int speed;
-  if (xValue_R > 510) {
+  if (xValue_R > 550) {
     speed = xValue_R - 508;
     show_lcd("Direction speed", ("Forward   " + String(speed)).c_str());
-  } else if (xValue_R < 506) {
+  } else if (xValue_R < 480) {
     speed = 508 - xValue_R;
     show_lcd("Direction speed", ("Backward  " + String(speed)).c_str());
   } else if (yValue_R > 510) {
@@ -110,7 +107,7 @@ void show_direction(int xValue_R, int yValue_R, int yValue_L, int xValue_L) {
     show_lcd("Direction speed", ("L_up   " + String(speed)).c_str());
   } else if (xValue_L < 495) {
     speed = 499 - xValue_L;
-    show_lcd("Direction speed", ("L_down   " + String(speed)).c_str());
+    show_lcd("Direction speed", ("L_down     " + String(speed)).c_str());
   }
   delay(50);
 }
