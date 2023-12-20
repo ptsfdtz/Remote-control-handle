@@ -12,16 +12,34 @@ RF24 radio(7, 8);
 const byte address[6] = "00001";
 
 struct ControlMessage {
-  char direction[10];
+  int xValue_R;
+  int yValue_R;
+  int xValue_L;
+  int yValue_L;
   int speed;
+  int angle_L;
+  int angle_R;
 };
 
-const int buttonPins[] = { 4, 5, 6, 9, 10 };
-const int switchPins[] = { 2, 3 };
-const int analogPinsL[] = { A7, A6, 0, A0 };
-const int analogPinsR[] = { A3, A2, 1, A1 };
+const int buttonPins[] = {4, 5, 6, 9, 10};
+const int switchPins[] = {2, 3};
+const int analogPinsL[] = {A7, A6, 0, A0};
+const int analogPinsR[] = {A3, A2, 1, A1};
 
 LiquidCrystal_I2C lcd(LCD_ADDRESS, LCD_COLUMNS, LCD_ROWS);
+
+void sendControlMessage(int xValue_R, int yValue_R, int xValue_L, int yValue_L, int speed, int angle_L, int angle_R) {
+  ControlMessage controlMessage;
+  controlMessage.xValue_R = xValue_R;
+  controlMessage.yValue_R = yValue_R;
+  controlMessage.xValue_L = xValue_L;
+  controlMessage.yValue_L = yValue_L;
+  controlMessage.speed = speed;
+  controlMessage.angle_L = angle_L;
+  controlMessage.angle_R = angle_R;
+
+  radio.write(&controlMessage, sizeof(controlMessage));
+}
 
 void setup() {
   Serial.begin(9600);
@@ -72,7 +90,7 @@ void loop() {
   else if (digitalRead(switchPins[1]) == HIGH && digitalRead(switchPins[0]) == HIGH)
     show_angle(angle_L, angle_R);
   else
-    show_direction(xValue_R, yValue_R, yValue_L, xValue_L);
+    show_direction(xValue_R, yValue_R, yValue_L, xValue_L, angle_L, angle_R);
 }
 
 void show_bottom(int state1, int state2, int state3, int state4, int state5) {
@@ -87,74 +105,41 @@ void show_angle(int angle_L, int angle_R) {
   show_lcd("Potent angle:", (String(angle_L) + "       " + String(angle_R)).c_str());
 }
 
-void show_direction(int xValue_R, int yValue_R, int yValue_L, int xValue_L) {
+void show_direction(int xValue_R, int yValue_R, int yValue_L, int xValue_L, int angle_L, int angle_R) {
   int speed;
+
   if (xValue_R > 550) {
     speed = xValue_R - 508;
     show_lcd("Direction speed", ("Forward   " + String(speed)).c_str());
-    ControlMessage controlMessage;
-    strcpy(controlMessage.direction, "Forward");
-    controlMessage.speed = speed;
-    radio.write(&controlMessage, sizeof(controlMessage));
   } else if (xValue_R < 480) {
     speed = 508 - xValue_R;
     show_lcd("Direction speed", ("Backward  " + String(speed)).c_str());
-    ControlMessage controlMessage;
-    strcpy(controlMessage.direction, "Backward");
-    controlMessage.speed = speed;
-    radio.write(&controlMessage, sizeof(controlMessage));
   } else if (yValue_R > 510) {
     speed = yValue_R - 508;
     show_lcd("Direction speed", ("Right     " + String(speed)).c_str());
-    ControlMessage controlMessage;
-    strcpy(controlMessage.direction, "Right");
-    controlMessage.speed = speed;
-    radio.write(&controlMessage, sizeof(controlMessage));
   } else if (yValue_R < 506) {
     speed = 508 - yValue_R;
     show_lcd("Direction speed", ("Left      " + String(speed)).c_str());
-    ControlMessage controlMessage;
-    strcpy(controlMessage.direction, "Left");
-    controlMessage.speed = speed;
-    radio.write(&controlMessage, sizeof(controlMessage));
   } else if (yValue_L > 518) {
     speed = yValue_L - 508;
     show_lcd("Direction speed", ("Shift_R   " + String(speed)).c_str());
-    ControlMessage controlMessage;
-    strcpy(controlMessage.direction, "Shift_R");
-    controlMessage.speed = speed;
-    radio.write(&controlMessage, sizeof(controlMessage));
   } else if (yValue_L < 510) {
     speed = 508 - yValue_L;
     show_lcd("Direction speed", ("Shift_L   " + String(speed)).c_str());
-    ControlMessage controlMessage;
-    strcpy(controlMessage.direction, "Shift_L");
-    controlMessage.speed = speed;
-    radio.write(&controlMessage, sizeof(controlMessage));
   } else if (xValue_L > 503) {
     speed = xValue_L - 499;
     show_lcd("Direction speed", ("L_up     " + String(speed)).c_str());
-    ControlMessage controlMessage;
-    strcpy(controlMessage.direction, "L_up");
-    controlMessage.speed = speed;
-    radio.write(&controlMessage, sizeof(controlMessage));
   } else if (xValue_L < 495) {
     speed = 499 - xValue_L;
     show_lcd("Direction speed", ("L_down     " + String(speed)).c_str());
-    ControlMessage controlMessage;
-    strcpy(controlMessage.direction, "L_down");
-    controlMessage.speed = speed;
-    radio.write(&controlMessage, sizeof(controlMessage));
-  } else{
+  } else {
     speed = 0;
-    ControlMessage controlMessage;
-    strcpy(controlMessage.direction, "stop");
-    controlMessage.speed = speed;
-    radio.write(&controlMessage, sizeof(controlMessage));
+    show_lcd("Direction speed", ("Stop     " + String(speed)).c_str());
   }
+  sendControlMessage(xValue_R, yValue_R, xValue_L, yValue_L, speed, angle_L, angle_R);
 }
 
-void show_lcd(const char* line1, const char* line2) {
+void show_lcd(const char *line1, const char *line2) {
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print(line1);
