@@ -2,21 +2,20 @@
 #include <nRF24L01.h>
 #include <RF24.h>
 #include "Motor.h"
-#include <Adafruit_PWMServoDriver.h>
-#include "FastLED.h" 
-Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
-
-int begin1 = 0;
-int begin2 = 0;
-
+#include <Servo.h>
+Servo servo1;  // 创建一个Servo对象来控制第一个舵机
+Servo servo2;  // 创建一个Servo对象来控制第二个舵机
 struct ControlMessage {
   int xValue_R;
   int yValue_R;
   int xValue_L;
   int yValue_L;
   int speed;
+  int angle_L;
+  int angle_R;
 };
-
+int angle1;
+int angle2;
 int speed;
 RF24 radio(7, 8);  // CE, CSN
 Motor motor(22, 24, 28, 26, 30, 32, 36, 34, 2, 3, 4, 5);
@@ -27,13 +26,13 @@ const unsigned long timeoutPeriod = 1000;  // Set your desired timeout period in
 
 void setup() {
   Serial.begin(9600);
+  servo1.attach(9);
+  servo2.attach(10);
   radio.begin();
   radio.openReadingPipe(0, address);
   radio.setPALevel(RF24_PA_MIN);
   radio.startListening();
-  pwm.begin();
-  pwm.setPWMFreq(50);
-  servos_begin();
+  servo_begin();
 }
 
 void loop() {
@@ -41,18 +40,8 @@ void loop() {
     ControlMessage receivedMessage;
     radio.read(&receivedMessage, sizeof(receivedMessage));
     lastReceiveTime = millis();  // Update last receive time
-
-    Serial.print("Received XR Value: ");
-    Serial.print(receivedMessage.xValue_R);
-    Serial.print(", YR Value: ");
-    Serial.print(receivedMessage.yValue_R);
-    Serial.print(", XL Value: ");
-    Serial.print(receivedMessage.xValue_L);
-    Serial.print(", YL Value: ");
-    Serial.print(receivedMessage.yValue_L);
-    Serial.print(", Speed: ");
-    Serial.println(receivedMessage.speed);
-
+    servo1.write(receivedMessage.angle_L);
+    servo2.write(receivedMessage.angle_R);
     if (receivedMessage.speed > 500) {
       speed = 250;
     } else {
@@ -67,10 +56,10 @@ void loop() {
       motor.backward();
     } else if (receivedMessage.yValue_R > 550) {
       motor.speed(speed);
-      motor.horizontal_R();
+      motor.horizontal_L();
     } else if (receivedMessage.yValue_R < 480) {
       motor.speed(speed);
-      motor.horizontal_L();
+      motor.horizontal_R();
     } else {
       motor.speed(0);
       motor.stop();
@@ -81,10 +70,10 @@ void loop() {
     } else if (receivedMessage.xValue_L < 480) {
 
     } else if (receivedMessage.yValue_L > 530) {
-      motor.speed(speed);
+      motor.speed(speed/2);
       motor.right();
     } else if (receivedMessage.yValue_L < 500) {
-      motor.speed(speed);
+      motor.speed(speed/2);
       motor.left();
     } 
   }
@@ -95,8 +84,7 @@ void loop() {
   }
 }
 
-void servos_begin()
-{
-  pwm.setPWM(0, 0, begin1);
-  pwm.setPWM(1, 0, begin2);
+void servo_begin(){
+  servo1.write(0);
+  servo2.write(0);
 }

@@ -80,8 +80,8 @@ void loop() {
 
   potValue_L = analogRead(analogPinsL[3]);
   potValue_R = analogRead(analogPinsR[3]);
-  angle_L = map(potValue_L, 0, 1023, 0, 360);
-  angle_R = map(potValue_R, 0, 1023, 0, 360);
+  angle_L = map(potValue_L, 0, 1023, 0, 90);
+  angle_R = map(potValue_R, 0, 1023, 0, 90);
 
   if (digitalRead(switchPins[0]) == HIGH && digitalRead(switchPins[1]) == LOW)
     show_bottom(state[0], state[1], state[2], state[3], state[4]);
