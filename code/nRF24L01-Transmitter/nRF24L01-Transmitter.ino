@@ -149,7 +149,7 @@ void show_lcd(const char *line1, const char *line2) {
 }
 
 void begin_cartoon() {
-  lcd.begin();
+  lcd.begin(LCD_COLUMNS, LCD_ROWS);
   lcd.clear();
   for (int i = 0; i < LCD_COLUMNS; ++i) {
     lcd.setCursor(i, 0);
